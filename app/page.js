@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge"
 import { EventStorage } from "@/lib/eventStorage"
 import { Navbar } from "@/components/navbar"
 import { useSession } from "next-auth/react"
-console.log(require('crypto').randomBytes(32).toString('base64'));
 
 export default function HomePage() {
   const { data: session } = useSession()
