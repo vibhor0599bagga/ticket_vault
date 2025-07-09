@@ -3,46 +3,105 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { CheckCircle, Calendar, MapPin, Download, Mail, Share2, Star } from "lucide-react"
+import {
+  CheckCircle,
+  Calendar,
+  MapPin,
+  Download,
+  Mail,
+  Share2,
+  Star,
+  Copy,
+  ExternalLink,
+  ArrowRight,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Navbar } from "@/components/navbar"
 
 export default function ConfirmationPage() {
   const [orderData, setOrderData] = useState(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    // Simulate getting confirmation data
-    const mockConfirmationData = {
-      orderNumber: "TKV-" + Math.random().toString(36).substr(2, 9).toUpperCase(),
-      purchaseDate: new Date().toISOString(),
-      event: {
-        id: 1,
-        title: "Taylor Swift - Eras Tour",
-        date: "2024-08-15",
-        time: "8:00 PM",
-        venue: "Madison Square Garden",
-        location: "New York, NY",
-        image: "/placeholder.svg?height=200&width=300",
-        category: "Concert",
-        rating: 4.9,
-        section: "Floor Section A",
-        row: "12",
-        seats: "15-16",
-      },
-      tickets: {
-        quantity: 2,
-        pricePerTicket: 150,
+    // Get confirmation data from localStorage or API
+    const storedData = localStorage.getItem("orderConfirmation")
+
+    if (storedData) {
+      setOrderData(JSON.parse(storedData))
+    } else {
+      // Fallback mock data if no stored data
+      const mockConfirmationData = {
+        orderNumber: "TKV-" + Math.random().toString(36).substr(2, 9).toUpperCase(),
+        purchaseDate: new Date().toISOString(),
+        event: {
+          id: 1,
+          title: "Taylor Swift - Eras Tour",
+          date: "2024-08-15",
+          time: "8:00 PM",
+          venue: "Madison Square Garden",
+          location: "New York, NY",
+          image: "/placeholder.svg?height=200&width=300",
+          category: "Concert",
+          rating: 4.9,
+          section: "Floor Section A",
+          row: "12",
+          seats: "15-16",
+          description: "Experience the magic of Taylor Swift's record-breaking Eras Tour",
+        },
+        tickets: {
+          quantity: 2,
+          pricePerTicket: 150,
+        },
         total: 334.9,
-      },
-      customer: {
-        name: "John Doe",
-        email: "john@example.com",
-      },
+        customer: {
+          name: "John Doe",
+          email: "john@example.com",
+          phone: "+1 (555) 123-4567",
+        },
+        paymentMethod: "card",
+      }
+      setOrderData(mockConfirmationData)
     }
-    setOrderData(mockConfirmationData)
   }, [])
+
+  const copyOrderNumber = () => {
+    if (orderData?.orderNumber) {
+      navigator.clipboard.writeText(orderData.orderNumber)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  const downloadTickets = () => {
+    // Simulate ticket download
+    console.log("Downloading tickets for order:", orderData?.orderNumber)
+    // In real app, this would trigger a PDF download or redirect to ticket app
+  }
+
+  const emailTickets = () => {
+    // Simulate emailing tickets
+    console.log("Emailing tickets to:", orderData?.customer.email)
+    // In real app, this would trigger an email send
+  }
+
+  const shareEvent = () => {
+    if (navigator.share && orderData) {
+      navigator.share({
+        title: orderData.event.title,
+        text: `I'm going to ${orderData.event.title}!`,
+        url: window.location.origin + `/events/${orderData.event.id}`,
+      })
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      const shareUrl = `${window.location.origin}/events/${orderData?.event.id}`
+      navigator.clipboard.writeText(shareUrl)
+      alert("Event link copied to clipboard!")
+    }
+  }
 
   if (!orderData) {
     return (
@@ -54,32 +113,43 @@ export default function ConfirmationPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link
-              href="/"
-              className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent"
-            >
-              TicketVault
-            </Link>
-            <Link href="/dashboard">
-              <Button variant="outline">View My Tickets</Button>
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Success Header */}
         <div className="text-center mb-12">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
             <CheckCircle className="h-10 w-10 text-green-600" />
           </div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-4">Payment Successful!</h1>
-          <p className="text-xl text-slate-600 mb-2">Your tickets have been confirmed</p>
-          <p className="text-slate-500">Order #{orderData.orderNumber}</p>
+          <h1 className="text-4xl font-bold text-slate-900 mb-4">Payment Successful! 🎉</h1>
+          <p className="text-xl text-slate-600 mb-2">Your tickets have been confirmed and are ready</p>
+          <div className="flex items-center justify-center space-x-2">
+            <span className="text-slate-500">Order #</span>
+            <code className="bg-slate-100 px-2 py-1 rounded text-slate-700 font-mono">{orderData.orderNumber}</code>
+            <Button variant="ghost" size="sm" onClick={copyOrderNumber} className="h-6 w-6 p-0">
+              <Copy className="h-3 w-3" />
+            </Button>
+            {copied && <span className="text-green-600 text-sm">Copied!</span>}
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Button
+            onClick={downloadTickets}
+            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 h-12"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Download Tickets
+          </Button>
+          <Button variant="outline" onClick={emailTickets} className="h-12 bg-transparent">
+            <Mail className="h-4 w-4 mr-2" />
+            Email Tickets
+          </Button>
+          <Button variant="outline" onClick={shareEvent} className="h-12 bg-transparent">
+            <Share2 className="h-4 w-4 mr-2" />
+            Share Event
+          </Button>
         </div>
 
         {/* Order Details */}
@@ -150,7 +220,7 @@ export default function ConfirmationPage() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-slate-600">Order Number:</span>
-                  <span className="font-medium">{orderData.orderNumber}</span>
+                  <span className="font-medium font-mono text-sm">{orderData.orderNumber}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Purchase Date:</span>
@@ -162,7 +232,11 @@ export default function ConfirmationPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Email:</span>
-                  <span className="font-medium">{orderData.customer.email}</span>
+                  <span className="font-medium text-sm">{orderData.customer.email}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Payment Method:</span>
+                  <span className="font-medium capitalize">{orderData.paymentMethod} ending in ****</span>
                 </div>
               </div>
 
@@ -180,10 +254,7 @@ export default function ConfirmationPage() {
                 <div className="flex justify-between">
                   <span className="text-slate-600">Fees & Tax</span>
                   <span className="font-medium">
-                    $
-                    {(orderData.tickets.total - orderData.tickets.quantity * orderData.tickets.pricePerTicket).toFixed(
-                      2,
-                    )}
+                    ${(orderData.total - orderData.tickets.quantity * orderData.tickets.pricePerTicket).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -192,55 +263,83 @@ export default function ConfirmationPage() {
 
               <div className="flex justify-between text-lg font-bold">
                 <span>Total Paid</span>
-                <span>${orderData.tickets.total.toFixed(2)}</span>
+                <span className="text-green-600">${orderData.total.toFixed(2)}</span>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-            <Download className="h-4 w-4 mr-2" />
-            Download Tickets
-          </Button>
-          <Button variant="outline">
-            <Mail className="h-4 w-4 mr-2" />
-            Email Tickets
-          </Button>
-          <Button variant="outline">
-            <Share2 className="h-4 w-4 mr-2" />
-            Share Event
-          </Button>
-        </div>
-
         {/* Important Information */}
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-blue-50 border-blue-200 mb-8">
           <CardContent className="pt-6">
-            <h3 className="font-semibold text-blue-900 mb-3">Important Information</h3>
+            <h3 className="font-semibold text-blue-900 mb-3">📋 Important Information</h3>
             <ul className="space-y-2 text-sm text-blue-800">
-              <li>• Your tickets have been sent to {orderData.customer.email}</li>
-              <li>• Please arrive at the venue 30 minutes before the event starts</li>
+              <li>
+                • Your tickets have been sent to <strong>{orderData.customer.email}</strong>
+              </li>
+              <li>• Please arrive at the venue 30-45 minutes before the event starts</li>
               <li>• Bring a valid ID that matches the name on your order</li>
               <li>• Screenshots of tickets will not be accepted - use the official app or printed tickets</li>
               <li>• Contact customer support if you have any issues accessing your tickets</li>
+              <li>• Check the venue's bag policy and prohibited items list before attending</li>
             </ul>
           </CardContent>
         </Card>
 
+        {/* Ticket Access Alert */}
+        <Alert className="mb-8 border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">
+            <strong>Tickets are now available!</strong> You can download them immediately or access them anytime from
+            your dashboard.
+          </AlertDescription>
+        </Alert>
+
         {/* Next Steps */}
-        <div className="text-center mt-12">
-          <h3 className="text-xl font-semibold text-slate-900 mb-4">What's Next?</h3>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="text-center">
+          <h3 className="text-xl font-semibold text-slate-900 mb-6">What's Next?</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Link href="/dashboard">
-              <Button variant="outline">View My Tickets</Button>
+              <Button variant="outline" className="w-full h-12 bg-transparent">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                My Dashboard
+              </Button>
+            </Link>
+            <Link href={`/events/${orderData.event.id}`}>
+              <Button variant="outline" className="w-full h-12 bg-transparent">
+                <Star className="h-4 w-4 mr-2" />
+                Event Details
+              </Button>
             </Link>
             <Link href="/events">
-              <Button variant="outline">Browse More Events</Button>
+              <Button variant="outline" className="w-full h-12 bg-transparent">
+                <Calendar className="h-4 w-4 mr-2" />
+                More Events
+              </Button>
             </Link>
             <Link href="/">
-              <Button variant="outline">Back to Home</Button>
+              <Button variant="outline" className="w-full h-12 bg-transparent">
+                <ArrowRight className="h-4 w-4 mr-2" />
+                Back Home
+              </Button>
             </Link>
+          </div>
+        </div>
+
+        {/* Support Contact */}
+        <div className="text-center mt-12 p-6 bg-slate-100 rounded-lg">
+          <h4 className="font-semibold text-slate-900 mb-2">Need Help?</h4>
+          <p className="text-slate-600 mb-4">
+            Our customer support team is here to help with any questions about your order.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+            <Button variant="outline" size="sm">
+              <Mail className="h-4 w-4 mr-2" />
+              support@ticketvault.com
+            </Button>
+            <Button variant="outline" size="sm">
+              📞 1-800-TICKETS
+            </Button>
           </div>
         </div>
       </div>

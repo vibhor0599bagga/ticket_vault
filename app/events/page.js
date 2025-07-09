@@ -10,8 +10,12 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
+import { EventStorage } from "@/lib/eventStorage"
+import { Navbar } from "@/components/navbar"
+import { useSession } from "next-auth/react"
 
 export default function EventsPage() {
+  const { data: session } = useSession()
   const [events, setEvents] = useState([])
   const [filteredEvents, setFilteredEvents] = useState([])
   const [searchQuery, setSearchQuery] = useState("")
@@ -25,108 +29,10 @@ export default function EventsPage() {
   const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
-    // Simulate fetching events
-    const mockEvents = [
-      {
-        id: 1,
-        title: "Taylor Swift - Eras Tour",
-        date: "2024-08-15",
-        venue: "Madison Square Garden",
-        location: "New York, NY",
-        price: 150,
-        originalPrice: 200,
-        image: "/placeholder.svg?height=300&width=400",
-        category: "Concert",
-        rating: 4.9,
-        soldCount: 1250,
-        trending: true,
-        availableTickets: 15,
-        description: "Experience the magic of Taylor Swift's record-breaking Eras Tour",
-      },
-      {
-        id: 2,
-        title: "Avengers: Secret Wars",
-        date: "2024-07-20",
-        venue: "AMC Empire 25",
-        location: "New York, NY",
-        price: 25,
-        originalPrice: 30,
-        image: "/placeholder.svg?height=300&width=400",
-        category: "Movie",
-        rating: 4.8,
-        soldCount: 890,
-        trending: false,
-        availableTickets: 8,
-        description: "The ultimate Marvel showdown comes to the big screen",
-      },
-      {
-        id: 3,
-        title: "Lakers vs Warriors",
-        date: "2024-08-10",
-        venue: "Crypto.com Arena",
-        location: "Los Angeles, CA",
-        price: 120,
-        originalPrice: 150,
-        image: "/placeholder.svg?height=300&width=400",
-        category: "Sports",
-        rating: 4.7,
-        soldCount: 2100,
-        trending: true,
-        availableTickets: 12,
-        description: "Epic NBA showdown between two legendary teams",
-      },
-      {
-        id: 4,
-        title: "Hamilton Musical",
-        date: "2024-09-05",
-        venue: "Richard Rodgers Theatre",
-        location: "New York, NY",
-        price: 180,
-        originalPrice: 220,
-        image: "/placeholder.svg?height=300&width=400",
-        category: "Theater",
-        rating: 4.9,
-        soldCount: 750,
-        trending: false,
-        availableTickets: 6,
-        description: "The revolutionary musical that changed Broadway forever",
-      },
-      {
-        id: 5,
-        title: "Coldplay World Tour",
-        date: "2024-08-25",
-        venue: "MetLife Stadium",
-        location: "East Rutherford, NJ",
-        price: 95,
-        originalPrice: 120,
-        image: "/placeholder.svg?height=300&width=400",
-        category: "Concert",
-        rating: 4.8,
-        soldCount: 3200,
-        trending: true,
-        availableTickets: 20,
-        description: "An unforgettable night with one of the world's biggest bands",
-      },
-      {
-        id: 6,
-        title: "Top Gun: Maverick",
-        date: "2024-07-18",
-        venue: "AMC Lincoln Square",
-        location: "New York, NY",
-        price: 18,
-        originalPrice: 22,
-        image: "/placeholder.svg?height=300&width=400",
-        category: "Movie",
-        rating: 4.6,
-        soldCount: 450,
-        trending: false,
-        availableTickets: 10,
-        description: "Tom Cruise returns in this high-octane sequel",
-      },
-    ]
-
-    setEvents(mockEvents)
-    setFilteredEvents(mockEvents)
+    // Load events from localStorage
+    const loadedEvents = EventStorage.getEvents()
+    setEvents(loadedEvents)
+    setFilteredEvents(loadedEvents)
   }, [])
 
   useEffect(() => {
@@ -157,6 +63,12 @@ export default function EventsPage() {
     e.preventDefault()
   }
 
+  const refreshEvents = () => {
+    const loadedEvents = EventStorage.getEvents()
+    setEvents(loadedEvents)
+    setFilteredEvents(loadedEvents)
+  }
+
   const EventCard = ({ event, isListView = false }) => {
     const [selectedQuantity, setSelectedQuantity] = useState(1)
 
@@ -173,6 +85,9 @@ export default function EventsPage() {
             className={`object-cover group-hover:scale-105 transition-transform duration-300 ${isListView ? "w-full h-full" : "w-full h-48"}`}
           />
           {event.trending && <Badge className="absolute top-3 left-3 bg-red-500 hover:bg-red-600">🔥 Trending</Badge>}
+          {event.isUserListing && (
+            <Badge className="absolute top-3 right-3 bg-green-500 hover:bg-green-600">🏷️ User Listing</Badge>
+          )}
           <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center space-x-1">
             <Star className="h-3 w-3 text-yellow-500 fill-current" />
             <span className="text-xs font-medium">{event.rating}</span>
@@ -235,11 +150,19 @@ export default function EventsPage() {
               {selectedQuantity > 1 && (
                 <div className="text-sm text-slate-600 mb-1">Total: ${(event.price * selectedQuantity).toFixed(2)}</div>
               )}
-              <Link href={`/checkout?eventId=${event.id}&quantity=${selectedQuantity}&price=${event.price}`}>
-                <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-                  Buy Now
-                </Button>
-              </Link>
+              {session ? (
+                <Link href={`/checkout?eventId=${event.id}&quantity=${selectedQuantity}&price=${event.price}`}>
+                  <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+                    Buy Now
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/auth/signin">
+                  <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+                    Sign In to Buy
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </CardContent>
@@ -249,44 +172,7 @@ export default function EventsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/"
-                className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent"
-              >
-                TicketVault
-              </Link>
-            </div>
-            <div className="hidden md:flex items-center space-x-6">
-              <Link href="/events" className="text-slate-600 hover:text-slate-900 transition-colors">
-                Browse Events
-              </Link>
-              <Link href="/sell" className="text-slate-600 hover:text-slate-900 transition-colors">
-                Sell Tickets
-              </Link>
-              <Link href="/dashboard" className="text-slate-600 hover:text-slate-900 transition-colors">
-                Dashboard
-              </Link>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Link href="/signin">
-                <Button variant="ghost" className="text-slate-600 hover:text-slate-900">
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-                  Sign Up
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
@@ -319,6 +205,10 @@ export default function EventsPage() {
               >
                 <SlidersHorizontal className="h-4 w-4" />
                 <span>Filters</span>
+              </Button>
+
+              <Button variant="outline" onClick={refreshEvents} className="flex items-center space-x-2 bg-transparent">
+                <span>Refresh</span>
               </Button>
 
               <Select

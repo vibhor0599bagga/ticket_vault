@@ -3,12 +3,19 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Calendar, MapPin, Star, TrendingUp, Music, Film, Trophy, Users } from "lucide-react"
+import { Search, Calendar, MapPin, Star, TrendingUp, Music, Film, Trophy, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { EventStorage } from "@/lib/eventStorage"
+import { Navbar } from "@/components/navbar"
+import { useSession } from "next-auth/react"
+console.log(require('crypto').randomBytes(32).toString('base64'));
 
 export default function HomePage() {
+  const { data: session } = useSession()
+  const [searchQuery, setSearchQuery] = useState("")
   const [featuredEvents, setFeaturedEvents] = useState([])
   const [categories] = useState([
     { name: "Concerts", icon: Music, color: "bg-purple-500", count: "2.5k+" },
@@ -18,107 +25,55 @@ export default function HomePage() {
   ])
 
   useEffect(() => {
-    setFeaturedEvents([
-      {
-        id: 1,
-        title: "Taylor Swift - Eras Tour",
-        date: "2024-08-15",
-        venue: "Madison Square Garden",
-        location: "New York, NY",
-        price: 150,
-        originalPrice: 200,
-        image: "/placeholder.svg?height=300&width=400",
-        category: "Concert",
-        rating: 4.9,
-        soldCount: 1250,
-        trending: true,
-      },
-      {
-        id: 2,
-        title: "Avengers: Secret Wars",
-        date: "2024-07-20",
-        venue: "AMC Empire 25",
-        location: "New York, NY",
-        price: 25,
-        originalPrice: 30,
-        image: "/placeholder.svg?height=300&width=400",
-        category: "Movie",
-        rating: 4.8,
-        soldCount: 890,
-        trending: false,
-      },
-      {
-        id: 3,
-        title: "Lakers vs Warriors",
-        date: "2024-08-10",
-        venue: "Crypto.com Arena",
-        location: "Los Angeles, CA",
-        price: 120,
-        originalPrice: 150,
-        image: "/placeholder.svg?height=300&width=400",
-        category: "Sports",
-        rating: 4.7,
-        soldCount: 2100,
-        trending: true,
-      },
-    ])
+    // Load events from localStorage and get first 3 as featured
+    const allEvents = EventStorage.getEvents()
+    const featured = allEvents.slice(0, 3)
+    setFeaturedEvents(featured)
   }, [])
+
+  const handleSearch = (e) => {
+    e.preventDefault()
+    console.log("Searching for:", searchQuery)
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/"
-                className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent"
-              >
-                TicketVault
-              </Link>
-            </div>
-            <div className="hidden md:flex items-center space-x-6">
-              <Link href="/events" className="text-slate-600 hover:text-slate-900 transition-colors">
-                Browse Events
-              </Link>
-              <Link href="/sell" className="text-slate-600 hover:text-slate-900 transition-colors">
-                Sell Tickets
-              </Link>
-              <Link href="/dashboard" className="text-slate-600 hover:text-slate-900 transition-colors">
-                Dashboard
-              </Link>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Link href="/signin">
-                <Button variant="ghost" className="text-slate-600 hover:text-slate-900">
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-                  Sign Up
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero Section */}
       <section className="relative py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 to-blue-600/10"></div>
         <div className="relative max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl md:text-5xl font-bold text-slate-900 mb-6">
+          <h1 className="text-5xl md:text-7xl font-bold text-slate-900 mb-6">
             Your Gateway to
-            <span className="text-5xl md:text-7xl bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-6">
-              <br></br> Unforgettable Events
+            <span className="block bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              Unforgettable Events
             </span>
           </h1>
           <p className="text-xl text-slate-600 mb-8 max-w-3xl mx-auto">
             Buy and sell event tickets safely with our trusted marketplace. From concerts to sports, movies to theater -
             find your next amazing experience.
           </p>
+
+          {/* Search Bar */}
+          <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-12">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
+              <Input
+                type="text"
+                placeholder="Search for events, artists, venues..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-12 pr-4 py-4 text-lg rounded-full border-2 border-slate-200 focus:border-purple-500 shadow-lg"
+              />
+              <Button
+                type="submit"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              >
+                Search
+              </Button>
+            </div>
+          </form>
 
           {/* Categories */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
@@ -208,11 +163,19 @@ export default function HomePage() {
                         <span className="text-sm text-slate-500 line-through">${event.originalPrice}</span>
                       )}
                     </div>
-                    <Link href={`/checkout?eventId=${event.id}&quantity=1&price=${event.price}`}>
-                      <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-                        Buy Tickets
-                      </Button>
-                    </Link>
+                    {session ? (
+                      <Link href={`/checkout?eventId=${event.id}&quantity=1&price=${event.price}`}>
+                        <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+                          Buy Tickets
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Link href="/auth/signin">
+                        <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+                          Sign In to Buy
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -275,16 +238,13 @@ export default function HomePage() {
                     Browse Events
                   </Link>
                 </li>
-                <li>
-                  <Link href="/sell" className="hover:text-white transition-colors">
-                    Sell Tickets
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/dashboard" className="hover:text-white transition-colors">
-                    Dashboard
-                  </Link>
-                </li>
+                {session && (
+                  <li>
+                    <Link href="/sell" className="hover:text-white transition-colors">
+                      Sell Tickets
+                    </Link>
+                  </li>
+                )}
               </ul>
             </div>
             <div>

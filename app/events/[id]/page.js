@@ -9,121 +9,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
+import { EventStorage } from "@/lib/eventStorage"
+import { Navbar } from "@/components/navbar"
+import { useSession } from "next-auth/react"
 
 export default function EventDetailPage({ params }) {
+  const { data: session } = useSession()
   const [event, setEvent] = useState(null)
   const [selectedQuantity, setSelectedQuantity] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Mock events database - in real app, this would come from API
-    const eventsDatabase = {
-      1: {
-        id: 1,
-        title: "Taylor Swift - Eras Tour",
-        date: "2024-08-15",
-        time: "8:00 PM",
-        venue: "Madison Square Garden",
-        location: "New York, NY",
-        price: 150,
-        originalPrice: 200,
-        image: "/placeholder.svg?height=400&width=600",
-        category: "Concert",
-        rating: 4.9,
-        soldCount: 1250,
-        trending: true,
-        availableTickets: 15,
-        description:
-          "Experience the magic of Taylor Swift's record-breaking Eras Tour. This spectacular show features songs from across her entire discography, with stunning visuals, costume changes, and surprise acoustic performances.",
-        longDescription:
-          "The Eras Tour is Taylor Swift's sixth headlining concert tour. The tour is in support of Swift's entire discography, following the re-recording of her first six studio albums. The setlist is divided into ten acts, with each act representing a different 'era' of Swift's career. The show features elaborate stage designs, multiple costume changes, and a mix of her biggest hits and fan favorites.",
-        highlights: [
-          "3+ hour spectacular show",
-          "Songs from all Taylor Swift eras",
-          "Surprise acoustic performances",
-          "Elaborate stage production",
-          "Multiple costume changes",
-        ],
-        venue_info: {
-          address: "4 Pennsylvania Plaza, New York, NY 10001",
-          capacity: "20,789",
-          parking: "Available at Penn Station and nearby lots",
-          accessibility: "ADA compliant with wheelchair accessible seating",
-        },
-      },
-      2: {
-        id: 2,
-        title: "Avengers: Secret Wars",
-        date: "2024-07-20",
-        time: "7:30 PM",
-        venue: "AMC Empire 25",
-        location: "New York, NY",
-        price: 25,
-        originalPrice: 30,
-        image: "/placeholder.svg?height=400&width=600",
-        category: "Movie",
-        rating: 4.8,
-        soldCount: 890,
-        trending: false,
-        availableTickets: 8,
-        description:
-          "The ultimate Marvel showdown comes to the big screen in this epic conclusion to the multiverse saga.",
-        longDescription:
-          "Avengers: Secret Wars brings together heroes from across the multiverse in the most ambitious Marvel film yet. With stunning visual effects and an all-star cast, this movie promises to be the event of the year for Marvel fans.",
-        highlights: [
-          "Epic multiverse storyline",
-          "All-star Marvel cast",
-          "Cutting-edge visual effects",
-          "IMAX and Dolby Atmos available",
-          "Post-credits scenes",
-        ],
-        venue_info: {
-          address: "234 W 42nd St, New York, NY 10036",
-          capacity: "500 seats",
-          parking: "Times Square parking garages nearby",
-          accessibility: "Wheelchair accessible with assistive listening devices",
-        },
-      },
-      3: {
-        id: 3,
-        title: "Lakers vs Warriors",
-        date: "2024-08-10",
-        time: "8:00 PM",
-        venue: "Crypto.com Arena",
-        location: "Los Angeles, CA",
-        price: 120,
-        originalPrice: 150,
-        image: "/placeholder.svg?height=400&width=600",
-        category: "Sports",
-        rating: 4.7,
-        soldCount: 2100,
-        trending: true,
-        availableTickets: 12,
-        description: "Epic NBA showdown between two legendary teams in what promises to be the game of the season.",
-        longDescription:
-          "Watch as the Los Angeles Lakers take on the Golden State Warriors in this highly anticipated matchup. Both teams are at the top of their game, making this a must-see event for basketball fans.",
-        highlights: [
-          "Star-studded lineups",
-          "Playoff implications",
-          "Premium arena experience",
-          "Pre-game entertainment",
-          "Concession specials",
-        ],
-        venue_info: {
-          address: "1111 S Figueroa St, Los Angeles, CA 90015",
-          capacity: "20,000",
-          parking: "On-site parking available",
-          accessibility: "ADA compliant with special seating areas",
-        },
-      },
+    // Load event from localStorage
+    const eventData = EventStorage.getEventById(params.id)
+
+    if (eventData) {
+      setEvent(eventData)
     }
 
-    // Simulate API call delay
-    setTimeout(() => {
-      const eventData = eventsDatabase[params.id] || eventsDatabase[1]
-      setEvent(eventData)
-      setIsLoading(false)
-    }, 500)
+    setIsLoading(false)
   }, [params.id])
 
   if (isLoading) {
@@ -136,12 +40,15 @@ export default function EventDetailPage({ params }) {
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-slate-900 mb-4">Event Not Found</h1>
-          <Link href="/events">
-            <Button>Back to Events</Button>
-          </Link>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <Navbar />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-slate-900 mb-4">Event Not Found</h1>
+            <Link href="/events">
+              <Button>Back to Events</Button>
+            </Link>
+          </div>
         </div>
       </div>
     )
@@ -149,44 +56,7 @@ export default function EventDetailPage({ params }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/"
-                className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent"
-              >
-                TicketVault
-              </Link>
-            </div>
-            <div className="hidden md:flex items-center space-x-6">
-              <Link href="/events" className="text-slate-600 hover:text-slate-900 transition-colors">
-                Browse Events
-              </Link>
-              <Link href="/sell" className="text-slate-600 hover:text-slate-900 transition-colors">
-                Sell Tickets
-              </Link>
-              <Link href="/dashboard" className="text-slate-600 hover:text-slate-900 transition-colors">
-                Dashboard
-              </Link>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Link href="/signin">
-                <Button variant="ghost" className="text-slate-600 hover:text-slate-900">
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-                  Sign Up
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back Button */}
@@ -273,6 +143,27 @@ export default function EventDetailPage({ params }) {
                 <p className="text-slate-600">{event.longDescription}</p>
               </div>
             </div>
+
+            {event.isUserListing && (
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="pt-6">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">👤</span>
+                    </div>
+                    <span className="font-semibold text-blue-800">Individual Seller</span>
+                  </div>
+                  <p className="text-sm text-blue-700">
+                    This ticket is being sold by an individual seller through our secure marketplace.
+                  </p>
+                  {event.transferMethod && (
+                    <p className="text-sm text-blue-700 mt-1">
+                      <strong>Transfer Method:</strong> {event.transferMethod}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Event Highlights */}
             <Card>
@@ -378,11 +269,19 @@ export default function EventDetailPage({ params }) {
                 )}
 
                 {/* Buy Button */}
-                <Link href={`/checkout?eventId=${event.id}&quantity=${selectedQuantity}&price=${event.price}`}>
-                  <Button className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold">
-                    Buy Tickets - ${(event.price * selectedQuantity).toFixed(2)}
-                  </Button>
-                </Link>
+                {session ? (
+                  <Link href={`/checkout?eventId=${event.id}&quantity=${selectedQuantity}&price=${event.price}`}>
+                    <Button className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold">
+                      Buy Tickets - ${(event.price * selectedQuantity).toFixed(2)}
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href="/auth/signin">
+                    <Button className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold">
+                      Sign In to Buy Tickets
+                    </Button>
+                  </Link>
+                )}
 
                 <div className="text-center text-xs text-slate-500">🔒 Secure checkout • Instant confirmation</div>
               </CardContent>
