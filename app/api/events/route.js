@@ -1,60 +1,38 @@
 import { NextResponse } from "next/server"
+import { connectToDatabase } from "@/lib/mongodb"
+import { eventSchema } from "@/lib/schemas/eventSchema"
 
-// In-memory storage (replace with real database)
-const events = [
-  {
-    id: 1,
-    title: "Taylor Swift - Eras Tour",
-    date: "2024-08-15",
-    time: "8:00 PM",
-    venue: "Madison Square Garden",
-    location: "New York, NY",
-    price: 150,
-    originalPrice: 200,
-    image: "/placeholder.svg?height=300&width=400",
-    category: "Concert",
-    rating: 4.9,
-    soldCount: 1250,
-    trending: true,
-    availableTickets: 15,
-    description: "Experience the magic of Taylor Swift's record-breaking Eras Tour",
-    isUserListing: false,
-    createdAt: "2024-01-01T00:00:00.000Z",
-  },
-  // ... other default events
-]
-
-// GET /api/events - Fetch all events
 export async function GET() {
   try {
+    const { db } = await connectToDatabase()
+    const events = await db.collection("events").find({}).toArray()
     return NextResponse.json({ events })
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch events" }, { status: 500 })
   }
 }
 
-// POST /api/events - Create new event
-export async function POST(request) {
+export async function POST(req) {
   try {
-    const eventData = await request.json()
+    const body = await req.json()
 
-    const newEvent = {
-      id: Math.max(...events.map((e) => e.id), 0) + 1,
-      ...eventData,
-      soldCount: 0,
-      rating: 4.5,
-      trending: false,
-      isUserListing: true,
-      createdAt: new Date().toISOString(),
+    // ✅ Validate incoming request
+    const validated = eventSchema.parse(body)
+
+    const { db } = await connectToDatabase()
+    const result = await db.collection("events").insertOne(validated)
+
+    return NextResponse.json({ success: true, insertedId: result.insertedId }, { status: 201 })
+  } catch (error) {
+    console.error("POST /api/events error:", error)
+
+    if (error.name === "ZodError") {
+      return NextResponse.json(
+        { success: false, error: "Validation failed", issues: error.errors },
+        { status: 400 }
+      )
     }
 
-    events.push(newEvent)
-
-    return NextResponse.json({
-      success: true,
-      event: newEvent,
-    })
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to create event" }, { status: 500 })
+    return NextResponse.json({ success: false, error: "Failed to insert event" }, { status: 500 })
   }
 }

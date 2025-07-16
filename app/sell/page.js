@@ -1,5 +1,5 @@
 "use client"
-
+import Footer from "@/components/footer"
 import { useState } from "react"
 import Link from "next/link"
 import { ArrowLeft, Upload, Calendar, DollarSign, Info } from "lucide-react"
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { EventStorage } from "@/lib/eventStorage"
+// import { EventStorage } from "@/lib/eventStorage"
 import { AuthGuard } from "@/components/auth-guard"
 import { Navbar } from "@/components/navbar"
 
@@ -47,95 +47,101 @@ export default function SellTicketsPage() {
   }
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setIsLoading(true)
+  e.preventDefault()
+  setIsLoading(true)
 
-    // Validate form
-    if (
-      !formData.eventTitle ||
-      !formData.eventDate ||
-      !formData.venue ||
-      !formData.location ||
-      !formData.category ||
-      !formData.originalPrice ||
-      !formData.sellingPrice ||
-      !formData.agreeToTerms
-    ) {
-      alert("Please fill in all required fields and agree to terms")
-      setIsLoading(false)
-      return
-    }
-
-    try {
-      // Create event data structure
-      const eventData = {
-        title: formData.eventTitle,
-        date: formData.eventDate,
-        time: formData.eventTime || "8:00 PM",
-        venue: formData.venue,
-        location: formData.location,
-        price: Number.parseFloat(formData.sellingPrice),
-        originalPrice: Number.parseFloat(formData.originalPrice),
-        image: "/placeholder.svg?height=300&width=400", // Default image
-        category: formData.category,
-        availableTickets: formData.quantity,
-        description: formData.description || `${formData.eventTitle} at ${formData.venue}`,
-        longDescription:
-          formData.description ||
-          `Experience ${formData.eventTitle} at ${formData.venue} in ${formData.location}. Don't miss this amazing event!`,
-        highlights: [
-          "Authentic tickets guaranteed",
-          "Instant transfer available",
-          "Great seats available",
-          "Trusted seller",
-          "Secure transaction",
-        ],
-        venue_info: {
-          address: `${formData.venue}, ${formData.location}`,
-          capacity: "TBD",
-          parking: "Check venue website for parking information",
-          accessibility: "Contact venue for accessibility information",
-        },
-        section: formData.ticketType || "General Admission",
-        row: "TBD",
-        seats: `1-${formData.quantity}`,
-        sellerName: "Individual Seller",
-        transferMethod: formData.transferMethod,
-      }
-
-      // Save to localStorage via EventStorage
-      const newEvent = EventStorage.addEvent(eventData)
-
-      console.log("Event listed successfully:", newEvent)
-
-      // Show success message
-      alert(`Success! Your event "${formData.eventTitle}" has been listed and is now available in the marketplace.`)
-
-      // Reset form
-      setFormData({
-        eventTitle: "",
-        eventDate: "",
-        eventTime: "",
-        venue: "",
-        location: "",
-        category: "",
-        ticketType: "",
-        originalPrice: "",
-        sellingPrice: "",
-        quantity: 1,
-        description: "",
-        transferMethod: "",
-        agreeToTerms: false,
-      })
-
-      setUploadedFiles([])
-    } catch (error) {
-      console.error("Error listing event:", error)
-      alert("Error listing your event. Please try again.")
-    } finally {
-      setIsLoading(false)
-    }
+  if (
+    !formData.eventTitle ||
+    !formData.eventDate ||
+    !formData.venue ||
+    !formData.location ||
+    !formData.category ||
+    !formData.originalPrice ||
+    !formData.sellingPrice ||
+    !formData.agreeToTerms
+  ) {
+    alert("Please fill in all required fields and agree to terms")
+    setIsLoading(false)
+    return
   }
+
+  try {
+    const eventData = {
+      id: Date.now(), // temporary ID (ideally you let MongoDB assign _id)
+      title: formData.eventTitle,
+      date: formData.eventDate,
+      time: formData.eventTime || "8:00 PM",
+      venue: formData.venue,
+      location: formData.location,
+      price: parseFloat(formData.sellingPrice),
+      originalPrice: parseFloat(formData.originalPrice),
+      image: "/placeholder.svg?height=300&width=400",
+      category: formData.category,
+      rating: 0, // default
+      soldCount: 0, // default
+      trending: false, // default
+      availableTickets: formData.quantity,
+      description:
+        formData.description || `${formData.eventTitle} at ${formData.venue}`,
+      longDescription:
+        formData.description ||
+        `Experience ${formData.eventTitle} at ${formData.venue} in ${formData.location}. Don't miss this amazing event!`,
+      highlights: [
+        "Authentic tickets guaranteed",
+        "Instant transfer available",
+        "Great seats available",
+        "Trusted seller",
+        "Secure transaction",
+      ],
+      venue_info: {
+        address: `${formData.venue}, ${formData.location}`,
+        capacity: "TBD",
+        parking: "Check venue website for parking information",
+        accessibility: "Contact venue for accessibility information",
+      },
+      section: formData.ticketType || "General Admission",
+      row: "TBD",
+      seats: `1-${formData.quantity}`,
+      seller: "Anonymous", // you can set user email here later
+      isUserListing: true,
+      transferMethod: formData.transferMethod,
+    }
+
+    const res = await fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(eventData),
+    })
+
+    if (!res.ok) throw new Error("Failed to list event")
+
+    const newEvent = await res.json()
+    alert(`Success! Your event "${formData.eventTitle}" has been listed.`)
+
+    setFormData({
+      eventTitle: "",
+      eventDate: "",
+      eventTime: "",
+      venue: "",
+      location: "",
+      category: "",
+      ticketType: "",
+      originalPrice: "",
+      sellingPrice: "",
+      quantity: 1,
+      description: "",
+      transferMethod: "",
+      agreeToTerms: false,
+    })
+    setUploadedFiles([])
+  } catch (error) {
+    console.error("Error listing event:", error)
+    alert("Error listing your event. Please try again.")
+  } finally {
+    setIsLoading(false)
+  }
+}
+
 
   return (
     <AuthGuard requireAuth={true}>
@@ -512,6 +518,7 @@ export default function SellTicketsPage() {
             </div>
           </div>
         </div>
+        <Footer />
       </div>
     </AuthGuard>
   )

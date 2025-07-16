@@ -11,11 +11,30 @@ import { Badge } from "@/components/ui/badge"
 import { EventStorage } from "@/lib/eventStorage"
 import { Navbar } from "@/components/navbar"
 import { useSession } from "next-auth/react"
+import Footer from "@/components/footer"
+
+// import { useEffect, useState } from "react"
+// import Link from "next/link"
+// import Image from "next/image"
+// import { useSession } from "next-auth/react"
+// import {
+//   Search, TrendingUp, Calendar, MapPin, Star, Music, Film, Trophy, Users
+// } from "lucide-react"
+
+// import { Navbar } from "@/components/navbar"
+// import { Input } from "@/components/ui/input"
+// import { Button } from "@/components/ui/button"
+// import { Card, CardContent } from "@/components/ui/card"
+// import { Badge } from "@/components/ui/badge"
 
 export default function HomePage() {
   const { data: session } = useSession()
+
   const [searchQuery, setSearchQuery] = useState("")
   const [featuredEvents, setFeaturedEvents] = useState([])
+  const [loadingFeatured, setLoadingFeatured] = useState(true)
+  const [featuredError, setFeaturedError] = useState(null)
+
   const [categories] = useState([
     { name: "Concerts", icon: Music, color: "bg-purple-500", count: "2.5k+" },
     { name: "Movies", icon: Film, color: "bg-red-500", count: "1.8k+" },
@@ -24,10 +43,20 @@ export default function HomePage() {
   ])
 
   useEffect(() => {
-    // Load events from localStorage and get first 3 as featured
-    const allEvents = EventStorage.getEvents()
-    const featured = allEvents.slice(0, 3)
-    setFeaturedEvents(featured)
+    const fetchFeaturedEvents = async () => {
+      try {
+        const res = await fetch("/api/events")
+        const data = await res.json()
+        setFeaturedEvents(data.events || [])
+      } catch (err) {
+        setFeaturedError("Failed to load featured events")
+        console.error(err)
+      } finally {
+        setLoadingFeatured(false)
+      }
+    }
+
+    fetchFeaturedEvents()
   }, [])
 
   const handleSearch = (e) => {
@@ -41,7 +70,7 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <section className="relative py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 to-blue-600/10"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 to-blue-600/10" />
         <div className="relative max-w-7xl mx-auto text-center">
           <h1 className="text-5xl md:text-7xl font-bold text-slate-900 mb-6">
             Your Gateway to
@@ -50,11 +79,10 @@ export default function HomePage() {
             </span>
           </h1>
           <p className="text-xl text-slate-600 mb-8 max-w-3xl mx-auto">
-            Buy and sell event tickets safely with our trusted marketplace. From concerts to sports, movies to theater -
-            find your next amazing experience.
+            Buy and sell event tickets safely with our trusted marketplace. From concerts to sports, movies to theater — find your next amazing experience.
           </p>
 
-          {/* Search Bar */}
+{/*         
           <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-12">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
@@ -72,7 +100,7 @@ export default function HomePage() {
                 Search
               </Button>
             </div>
-          </form>
+          </form> */}
 
           {/* Categories */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
@@ -81,7 +109,8 @@ export default function HomePage() {
               return (
                 <Card
                   key={category.name}
-                  className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                  className="group transition-all duration-300 hover:scale-[1.03] hover:shadow-lg"
+                  style={{ cursor: "default" }}
                 >
                   <CardContent className="p-6 text-center">
                     <div
@@ -115,71 +144,78 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredEvents.map((event) => (
-              <Card
-                key={event.id}
-                className="group cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-2 overflow-hidden"
-              >
-                <div className="relative">
-                  <Image
-                    src={event.image || "/placeholder.svg"}
-                    alt={event.title}
-                    width={400}
-                    height={300}
-                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  {event.trending && (
-                    <Badge className="absolute top-3 left-3 bg-red-500 hover:bg-red-600">🔥 Trending</Badge>
-                  )}
-                  <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center space-x-1">
-                    <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                    <span className="text-xs font-medium">{event.rating}</span>
+          {loadingFeatured ? (
+            <p className="text-center text-slate-500">Loading featured events...</p>
+          ) : featuredError ? (
+            <p className="text-center text-red-500">{featuredError}</p>
+          ) : featuredEvents.length === 0 ? (
+            <p className="text-center text-slate-600">No featured events available.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {featuredEvents.slice(0, 3).map((event) => (
+                <Card
+                  key={event._id}
+                  className="group transition-all duration-300 hover:scale-[1.03] hover:shadow-xl overflow-hidden"
+                  style={{ cursor: "default" }}
+                >
+                  <div className="relative">
+                    <Image
+                      src={event.image || "/placeholder.svg"}
+                      alt={event.title}
+                      width={400}
+                      height={300}
+                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    {event.trending && (
+                      <Badge className="absolute top-3 left-3 bg-red-500 hover:bg-red-600">🔥 Trending</Badge>
+                    )}
+                    <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center space-x-1">
+                      <Star className="h-3 w-3 text-yellow-500 fill-current" />
+                      <span className="text-xs font-medium">{event.rating}</span>
+                    </div>
                   </div>
-                </div>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <Badge variant="secondary">{event.category}</Badge>
-                    <span className="text-sm text-slate-500">{event.soldCount} sold</span>
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-purple-600 transition-colors">
-                    {event.title}
-                  </h3>
-                  <div className="flex items-center text-slate-600 mb-2">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    <span className="text-sm">{new Date(event.date).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex items-center text-slate-600 mb-4">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    <span className="text-sm">
-                      {event.venue}, {event.location}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-2xl font-bold text-slate-900">${event.price}</span>
-                      {event.originalPrice > event.price && (
-                        <span className="text-sm text-slate-500 line-through">${event.originalPrice}</span>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <Badge variant="secondary">{event.category}</Badge>
+                      <span className="text-sm text-slate-500">{event.soldCount} sold</span>
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-purple-600 transition-colors">
+                      {event.title}
+                    </h3>
+                    <div className="flex items-center text-slate-600 mb-2">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      <span className="text-sm">{new Date(event.date).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex items-center text-slate-600 mb-4">
+                      <MapPin className="h-4 w-4 mr-2" />
+                      <span className="text-sm">{event.venue}, {event.location}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-2xl font-bold text-slate-900">₹{event.price}</span>
+                        {event.originalPrice > event.price && (
+                          <span className="text-sm text-slate-500 line-through">₹{event.originalPrice}</span>
+                        )}
+                      </div>
+                      {session ? (
+                        <Link href={`/checkout?eventId=${event._id}&quantity=1&price=${event.price}`}>
+                          <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700" style={{ cursor: "pointer" }}>
+                            Buy Tickets
+                          </Button>
+                        </Link>
+                      ) : (
+                        <Link href="/auth/signin">
+                          <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700" style={{ cursor: "pointer" }}>
+                            Sign In to Buy
+                          </Button>
+                        </Link>
                       )}
                     </div>
-                    {session ? (
-                      <Link href={`/checkout?eventId=${event.id}&quantity=1&price=${event.price}`}>
-                        <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-                          Buy Tickets
-                        </Button>
-                      </Link>
-                    ) : (
-                      <Link href="/auth/signin">
-                        <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-                          Sign In to Buy
-                        </Button>
-                      </Link>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -218,7 +254,9 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-white py-12 px-4 sm:px-6 lg:px-8">
+      <Footer />
+      {/* Optional: Uncomment if you want to add a footer */}
+      {/* <footer className="bg-slate-900 text-white py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
@@ -264,10 +302,10 @@ export default function HomePage() {
             </div>
           </div>
           <div className="border-t border-slate-800 mt-8 pt-8 text-center text-slate-400">
-            <p>&copy; 2024 TicketVault. All rights reserved.</p>
+            <p>&copy; 2025 TicketVault. All rights reserved.</p>
           </div>
         </div>
-      </footer>
+      </footer> */}
     </div>
   )
 }

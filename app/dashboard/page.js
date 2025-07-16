@@ -1,5 +1,5 @@
 "use client"
-
+import Footer from "@/components/footer"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
@@ -461,7 +461,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <div className="flex space-x-4">
+                  {/* <div className="flex space-x-4">
                     <Button
                       className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                       disabled
@@ -471,12 +471,13 @@ export default function DashboardPage() {
                     <Button variant="outline" disabled>
                       Account Settings (Coming Soon)
                     </Button>
-                  </div>
+                  </div> */}
                 </CardContent>
               </Card>
             </TabsContent>
           </Tabs>
         </div>
+        <Footer />
       </div>
     </AuthGuard>
   )
