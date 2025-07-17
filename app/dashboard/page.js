@@ -31,18 +31,61 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (session?.user?.email) {
-      loadUserData()
+    async function loadDashboardData() {
+      setIsLoading(true)
+      try {
+        let listings = []
+        let purchases = []
+        if (session?.user?.email) {
+          // Fetch user listings from API
+          const res = await fetch(`/api/events/by-seller/${encodeURIComponent(session.user.email)}`)
+          const data = await res.json()
+          listings = data.events || []
+          setUserListings(listings)
+
+          // Load purchased tickets from localStorage
+          const storedPurchases = localStorage.getItem(`purchases_${session.user.email}`)
+          purchases = storedPurchases ? JSON.parse(storedPurchases) : []
+          setPurchasedTickets(purchases)
+
+          // Calculate stats
+          const totalSpent = purchases.reduce((sum, ticket) => sum + ticket.price * ticket.quantity, 0)
+          const totalEarned = listings.reduce((sum, event) => sum + event.price * (event.soldTickets || 0), 0)
+          const activeListings = listings.filter((event) => event.availableTickets > 0).length
+          const completedTransactions = purchases.length + listings.filter((event) => (event.soldTickets || 0) > 0).length
+          const totalTicketsPurchased = purchases.reduce((sum, ticket) => sum + ticket.quantity, 0)
+          const totalTicketsSold = listings.reduce((sum, event) => sum + (event.soldTickets || 0), 0)
+
+          setStats({
+            totalSpent,
+            totalEarned,
+            activeListings,
+            completedTransactions,
+            totalTicketsPurchased,
+            totalTicketsSold,
+          })
+        }
+      } catch (error) {
+        console.error("Error loading dashboard data:", error)
+      } finally {
+        setIsLoading(false)
+      }
     }
+    loadDashboardData()
   }, [session])
+
+  const fetchUserListings = async () => {
+    try {
+      const res = await fetch(`/api/events/by-seller/${encodeURIComponent(session.user.email)}`)
+      const data = await res.json()
+      setUserListings(data.events || [])
+    } catch (error) {
+      console.error("Error fetching user listings from API:", error)
+    }
+  }
 
   const loadUserData = () => {
     try {
-      // Load user's event listings
-      const allEvents = EventStorage.getEvents()
-      const userEvents = allEvents.filter((event) => event.isUserListing)
-      setUserListings(userEvents)
-
       // Load purchased tickets from localStorage
       const storedPurchases = localStorage.getItem(`purchases_${session.user.email}`)
       const purchases = storedPurchases ? JSON.parse(storedPurchases) : []
@@ -50,11 +93,11 @@ export default function DashboardPage() {
 
       // Calculate real stats
       const totalSpent = purchases.reduce((sum, ticket) => sum + ticket.price * ticket.quantity, 0)
-      const totalEarned = userEvents.reduce((sum, event) => sum + event.price * (event.soldTickets || 0), 0)
-      const activeListings = userEvents.filter((event) => event.availableTickets > 0).length
-      const completedTransactions = purchases.length + userEvents.filter((event) => (event.soldTickets || 0) > 0).length
+      const totalEarned = userListings.reduce((sum, event) => sum + event.price * (event.soldTickets || 0), 0)
+      const activeListings = userListings.filter((event) => event.availableTickets > 0).length
+      const completedTransactions = purchases.length + userListings.filter((event) => (event.soldTickets || 0) > 0).length
       const totalTicketsPurchased = purchases.reduce((sum, ticket) => sum + ticket.quantity, 0)
-      const totalTicketsSold = userEvents.reduce((sum, event) => sum + (event.soldTickets || 0), 0)
+      const totalTicketsSold = userListings.reduce((sum, event) => sum + (event.soldTickets || 0), 0)
 
       setStats({
         totalSpent,
@@ -101,13 +144,22 @@ export default function DashboardPage() {
     }
   }
 
-  const handleDeleteListing = (eventId) => {
+  const handleDeleteListing = async (eventId) => {
     if (confirm("Are you sure you want to delete this listing?")) {
       try {
-        EventStorage.deleteEvent(eventId)
-        setUserListings((prev) => prev.filter((e) => e.id !== eventId))
-        // Recalculate stats
-        loadUserData()
+        // Send DELETE request to API
+        const res = await fetch(`/api/events?id=${eventId}`, {
+          method: "DELETE",
+        })
+        const data = await res.json()
+        if (data.success) {
+          // Remove from local state
+          setUserListings((prev) => prev.filter((e) => e.id !== eventId && e._id !== eventId))
+          // Recalculate stats
+          loadUserData()
+        } else {
+          alert(data.error || "Error deleting listing. Please try again.")
+        }
       } catch (error) {
         console.error("Error deleting listing:", error)
         alert("Error deleting listing. Please try again.")
@@ -374,16 +426,16 @@ export default function DashboardPage() {
                                   )}
                                 </div>
                                 <div className="flex space-x-1">
-                                  {!isExpired && (
+                                  {/* {!isExpired && (
                                     <Button size="sm" variant="outline" disabled>
                                       <Edit className="h-3 w-3" />
                                     </Button>
-                                  )}
+                                  )} */}
                                   <Button
                                     size="sm"
                                     variant="outline"
                                     className="text-red-600 hover:text-red-700 bg-transparent"
-                                    onClick={() => handleDeleteListing(event.id)}
+                                    onClick={() => handleDeleteListing(event._id)}
                                   >
                                     <Trash2 className="h-3 w-3" />
                                   </Button>

@@ -27,7 +27,7 @@ export default function EventsPage() {
   const [error, setError] = useState(null)
   const [filters, setFilters] = useState({
     category: "all",
-    priceRange: [0, 500],
+    priceRange: [0, 5000],
     date: "all",
     location: "all",
   })
@@ -52,27 +52,44 @@ export default function EventsPage() {
   }, [])
 
   useEffect(() => {
-    let filtered = events
+    let filtered = events;
 
+    // Search filter
     if (searchQuery) {
       filtered = filtered.filter((event) =>
         event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         event.venue.toLowerCase().includes(searchQuery.toLowerCase()) ||
         event.location.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      );
     }
 
-    if (filters.category !== "all") {
+    // Category filter (only if not 'all')
+    if (filters.category && filters.category !== "all") {
       filtered = filtered.filter((event) =>
-        event.category.toLowerCase() === filters.category.toLowerCase()
-      )
+        event.category && event.category.toLowerCase() === filters.category.toLowerCase()
+      );
     }
 
+    // Date filter (only if not 'all')
+    if (filters.date && filters.date !== "all") {
+      // Implement your date filter logic here if needed
+      // Example: filter by today's date or this week
+      // For now, skip actual filtering since backend may not support it
+    }
+
+    // Location filter (only if not 'all')
+    if (filters.location && filters.location !== "all") {
+      filtered = filtered.filter((event) =>
+        event.location && event.location.toLowerCase() === filters.location.toLowerCase()
+      );
+    }
+
+    // Price filter (always applied)
     filtered = filtered.filter(
       (event) => event.price >= filters.priceRange[0] && event.price <= filters.priceRange[1]
-    )
+    );
 
-    setFilteredEvents(filtered)
+    setFilteredEvents(filtered);
   }, [events, searchQuery, filters])
 
   const refreshEvents = () => {
@@ -258,12 +275,12 @@ export default function EventsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Price Range: ${filters.priceRange[0]} - ${filters.priceRange[1]}
+                  Price Range: ₹{filters.priceRange[0]} - ₹{filters.priceRange[1]}
                 </label>
                 <Slider
                   value={filters.priceRange}
                   onValueChange={(value) => setFilters((prev) => ({ ...prev, priceRange: value }))}
-                  max={500}
+                  max={5000}
                   step={10}
                 />
               </div>
@@ -313,7 +330,7 @@ export default function EventsPage() {
               setSearchQuery("")
               setFilters({
                 category: "all",
-                priceRange: [0, 500],
+                priceRange: [0, 5000],
                 date: "all",
                 location: "all",
               })
@@ -323,8 +340,8 @@ export default function EventsPage() {
           </div>
         ) : (
           <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" : "space-y-6"}>
-            {filteredEvents.map((event) => (
-              <EventCard key={event._id} event={event} isListView={viewMode === "list"} />
+            {filteredEvents.map((event, idx) => (
+              <EventCard key={event._id || idx} event={event} isListView={viewMode === "list"} />
             ))}
           </div>
         )}
