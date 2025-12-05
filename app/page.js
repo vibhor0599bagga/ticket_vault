@@ -73,8 +73,8 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 to-blue-600/10" />
         <div className="relative max-w-7xl mx-auto text-center">
           <h1 className="text-5xl md:text-7xl font-bold text-slate-900 mb-6">
-            Your Gateway to
-            <span className="block bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            Your Gateway to{" "}
+            <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
               Unforgettable Events
             </span>
           </h1>
@@ -82,7 +82,7 @@ export default function HomePage() {
             Buy and sell event tickets safely with our trusted marketplace. From concerts to sports, movies to theater — find your next amazing experience.
           </p>
 
-{/*         
+          {/*         
           <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-12">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
