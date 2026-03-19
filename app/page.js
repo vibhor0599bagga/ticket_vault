@@ -12,6 +12,7 @@ import { EventStorage } from "@/lib/eventStorage"
 import { Navbar } from "@/components/navbar"
 import { useSession } from "next-auth/react"
 import Footer from "@/components/footer"
+import { formatINR } from "@/lib/utils"
 
 // import { useEffect, useState } from "react"
 // import Link from "next/link"
@@ -192,9 +193,9 @@ export default function HomePage() {
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <span className="text-2xl font-bold text-slate-900">₹{event.price}</span>
+                        <span className="text-2xl font-bold text-slate-900">{formatINR(event.price)}</span>
                         {event.originalPrice > event.price && (
-                          <span className="text-sm text-slate-500 line-through">₹{event.originalPrice}</span>
+                          <span className="text-sm text-slate-500 line-through">{formatINR(event.originalPrice)}</span>
                         )}
                       </div>
                       {session ? (

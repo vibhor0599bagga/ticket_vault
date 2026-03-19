@@ -16,6 +16,7 @@ import {
 import { Slider } from "@/components/ui/slider"
 import { Navbar } from "@/components/navbar"
 import { useSession } from "next-auth/react"
+import { formatINR } from "@/lib/utils"
 
 export default function EventsPage() {
   const { data: session } = useSession()
@@ -27,7 +28,7 @@ export default function EventsPage() {
   const [error, setError] = useState(null)
   const [filters, setFilters] = useState({
     category: "all",
-    priceRange: [0, 5000],
+    priceRange: [0, 500000],
     date: "all",
     location: "all",
   })
@@ -180,15 +181,15 @@ export default function EventsPage() {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <span className="text-2xl font-bold text-slate-900">₹{event.price}</span>
+              <span className="text-2xl font-bold text-slate-900">{formatINR(event.price)}</span>
               {event.originalPrice > event.price && (
-                <span className="text-sm text-slate-500 line-through">₹{event.originalPrice}</span>
+                <span className="text-sm text-slate-500 line-through">{formatINR(event.originalPrice)}</span>
               )}
               {selectedQuantity > 1 && <span className="text-sm text-slate-600">× {selectedQuantity}</span>}
             </div>
             <div className="text-right">
               {selectedQuantity > 1 && (
-                <div className="text-sm text-slate-600 mb-1">Total: ₹{(event.price * selectedQuantity).toFixed(2)}</div>
+                <div className="text-sm text-slate-600 mb-1">Total: {formatINR(event.price * selectedQuantity)}</div>
               )}
               {session ? (
                 <Link href={`/checkout?eventId=${event._id}&quantity=${selectedQuantity}&price=${event.price}`}>
@@ -275,13 +276,13 @@ export default function EventsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Price Range: ₹{filters.priceRange[0]} - ₹{filters.priceRange[1]}
+                  Price Range: {formatINR(filters.priceRange[0])} - {formatINR(filters.priceRange[1])}
                 </label>
                 <Slider
                   value={filters.priceRange}
                   onValueChange={(value) => setFilters((prev) => ({ ...prev, priceRange: value }))}
-                  max={5000}
-                  step={10}
+                  max={500000}
+                  step={100}
                 />
               </div>
 
@@ -330,7 +331,7 @@ export default function EventsPage() {
               setSearchQuery("")
               setFilters({
                 category: "all",
-                priceRange: [0, 5000],
+                priceRange: [0, 500000],
                 date: "all",
                 location: "all",
               })

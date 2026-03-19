@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator"
 import { EventStorage } from "@/lib/eventStorage"
 import { Navbar } from "@/components/navbar"
 import { useSession } from "next-auth/react"
+import { formatINR } from "@/lib/utils"
 
 export default function EventDetailPage({ params }) {
   const { data: session } = useSession()
@@ -53,6 +54,9 @@ export default function EventDetailPage({ params }) {
       </div>
     )
   }
+
+  const subtotal = event.price * selectedQuantity
+  const estimatedFees = subtotal * 0.26
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -218,15 +222,15 @@ export default function EventDetailPage({ params }) {
                 {/* Pricing */}
                 <div className="text-center">
                   <div className="flex items-center justify-center space-x-2 mb-2">
-                    <span className="text-3xl font-bold text-slate-900">${event.price}</span>
+                    <span className="text-3xl font-bold text-slate-900">{formatINR(event.price)}</span>
                     {event.originalPrice > event.price && (
-                      <span className="text-lg text-slate-500 line-through">${event.originalPrice}</span>
+                      <span className="text-lg text-slate-500 line-through">{formatINR(event.originalPrice)}</span>
                     )}
                   </div>
                   <p className="text-sm text-slate-600">per ticket</p>
                   {event.originalPrice > event.price && (
                     <p className="text-sm text-green-600 font-medium">
-                      Save ${event.originalPrice - event.price} per ticket!
+                      Save {formatINR(event.originalPrice - event.price)} per ticket!
                     </p>
                   )}
                 </div>
@@ -259,11 +263,11 @@ export default function EventDetailPage({ params }) {
                   <div className="bg-slate-50 p-3 rounded-lg">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-slate-600">Subtotal ({selectedQuantity} tickets):</span>
-                      <span className="font-semibold">${(event.price * selectedQuantity).toFixed(2)}</span>
+                      <span className="font-semibold">{formatINR(subtotal)}</span>
                     </div>
                     <div className="flex justify-between items-center text-xs text-slate-500 mt-1">
                       <span>+ fees & taxes</span>
-                      <span>~${(selectedQuantity * 17.46).toFixed(2)}</span>
+                      <span>~{formatINR(estimatedFees)}</span>
                     </div>
                   </div>
                 )}
@@ -272,7 +276,7 @@ export default function EventDetailPage({ params }) {
                 {session ? (
                   <Link href={`/checkout?eventId=${event.id}&quantity=${selectedQuantity}&price=${event.price}`}>
                     <Button className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold">
-                      Buy Tickets - ${(event.price * selectedQuantity).toFixed(2)}
+                      Buy Tickets - {formatINR(subtotal)}
                     </Button>
                   </Link>
                 ) : (

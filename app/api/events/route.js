@@ -70,9 +70,28 @@ export async function POST(req) {
     const fullData = {
       ...body,
       sellerEmail: userEmail,
+      currency: "INR",
     }
 
-    const validated = eventSchema.parse(fullData)
+    const normalizeMoney = (value) => {
+      const parsed = Number(value)
+      if (!Number.isFinite(parsed)) {
+        return Number.NaN
+      }
+      return Math.round((parsed + Number.EPSILON) * 100) / 100
+    }
+
+    const normalizedData = {
+      ...fullData,
+      price: normalizeMoney(fullData.price),
+      originalPrice: normalizeMoney(fullData.originalPrice),
+    }
+
+    if (!Number.isFinite(normalizedData.price) || !Number.isFinite(normalizedData.originalPrice)) {
+      return NextResponse.json({ success: false, error: "Invalid price values" }, { status: 400 })
+    }
+
+    const validated = eventSchema.parse(normalizedData)
 
     const { db } = await connectToDatabase()
     const result = await db.collection("events").insertOne(validated)

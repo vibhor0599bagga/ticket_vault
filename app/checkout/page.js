@@ -28,6 +28,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AuthGuard } from "@/components/auth-guard"
 import { Navbar } from "@/components/navbar"
 import { useSession } from "next-auth/react"
+import { calculateINRFees, formatINR } from "@/lib/utils"
 
 export default function CheckoutPage() {
   const [orderData, setOrderData] = useState(null)
@@ -52,7 +53,7 @@ export default function CheckoutPage() {
     city: "",
     state: "",
     zipCode: "",
-    country: "US",
+    country: "IN",
 
     // Preferences
     savePaymentMethod: false,
@@ -67,7 +68,7 @@ export default function CheckoutPage() {
     const urlParams = new URLSearchParams(window.location.search)
     const eventId = urlParams.get("eventId") || "1"
     const quantity = Number.parseInt(urlParams.get("quantity") || "2")
-    const price = Number.parseFloat(urlParams.get("price") || "150")
+    const price = Number.parseFloat(urlParams.get("price") || "12450")
 
     // Mock events database - in real app, this would come from API
     const eventsDatabase = {
@@ -153,6 +154,9 @@ export default function CheckoutPage() {
 
     const selectedEvent = eventsDatabase[eventId] || eventsDatabase[1]
 
+    const subtotal = quantity * price
+    const fees = calculateINRFees(subtotal)
+
     const mockOrderData = {
       event: {
         id: Number.parseInt(eventId),
@@ -162,13 +166,9 @@ export default function CheckoutPage() {
       tickets: {
         quantity: quantity,
         pricePerTicket: price,
-        originalPrice: price + 50, // Simulate original higher price
+        originalPrice: Math.round(price * 1.2),
       },
-      fees: {
-        serviceFee: quantity * 6.25,
-        processingFee: quantity * 4.38,
-        tax: quantity * 6.83,
-      },
+      fees,
     }
     setOrderData(mockOrderData)
   }, [])
@@ -207,7 +207,7 @@ export default function CheckoutPage() {
     if (!formData.address.trim()) newErrors.address = "Address is required"
     if (!formData.city.trim()) newErrors.city = "City is required"
     if (!formData.state) newErrors.state = "State is required"
-    if (!formData.zipCode.trim()) newErrors.zipCode = "ZIP code is required"
+    if (!formData.zipCode.trim()) newErrors.zipCode = "PIN code is required"
 
     // Terms validation
     if (!formData.agreeToTerms) newErrors.agreeToTerms = "You must agree to the terms"
@@ -409,7 +409,7 @@ export default function CheckoutPage() {
                             id="phone"
                             name="phone"
                             type="tel"
-                            placeholder="+1 (555) 123-4567"
+                            placeholder="+91 98765 43210"
                             value={formData.phone}
                             onChange={handleInputChange}
                             className={`pl-10 ${errors.phone ? "border-red-500" : ""}`}
@@ -544,7 +544,7 @@ export default function CheckoutPage() {
                         <Input
                           id="city"
                           name="city"
-                          placeholder="New York"
+                          placeholder="Mumbai"
                           value={formData.city}
                           onChange={handleInputChange}
                           className={errors.city ? "border-red-500" : ""}
@@ -553,25 +553,25 @@ export default function CheckoutPage() {
                         {errors.city && <p className="text-red-500 text-xs">{errors.city}</p>}
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="state">State *</Label>
+                        <Label htmlFor="state">State / UT *</Label>
                         <Select
                           value={formData.state}
                           onValueChange={(value) => setFormData((prev) => ({ ...prev, state: value }))}
                         >
                           <SelectTrigger className={errors.state ? "border-red-500" : ""}>
-                            <SelectValue placeholder="Select state" />
+                            <SelectValue placeholder="Select state / UT" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="NY">New York</SelectItem>
-                            <SelectItem value="CA">California</SelectItem>
-                            <SelectItem value="TX">Texas</SelectItem>
-                            <SelectItem value="FL">Florida</SelectItem>
-                            <SelectItem value="IL">Illinois</SelectItem>
-                            <SelectItem value="PA">Pennsylvania</SelectItem>
-                            <SelectItem value="OH">Ohio</SelectItem>
-                            <SelectItem value="GA">Georgia</SelectItem>
-                            <SelectItem value="NC">North Carolina</SelectItem>
-                            <SelectItem value="MI">Michigan</SelectItem>
+                            <SelectItem value="MH">Maharashtra</SelectItem>
+                            <SelectItem value="DL">Delhi</SelectItem>
+                            <SelectItem value="KA">Karnataka</SelectItem>
+                            <SelectItem value="TN">Tamil Nadu</SelectItem>
+                            <SelectItem value="UP">Uttar Pradesh</SelectItem>
+                            <SelectItem value="GJ">Gujarat</SelectItem>
+                            <SelectItem value="WB">West Bengal</SelectItem>
+                            <SelectItem value="RJ">Rajasthan</SelectItem>
+                            <SelectItem value="TS">Telangana</SelectItem>
+                            <SelectItem value="PB">Punjab</SelectItem>
                           </SelectContent>
                         </Select>
                         {errors.state && <p className="text-red-500 text-xs">{errors.state}</p>}
@@ -579,11 +579,11 @@ export default function CheckoutPage() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="zipCode">ZIP Code *</Label>
+                        <Label htmlFor="zipCode">PIN Code *</Label>
                         <Input
                           id="zipCode"
                           name="zipCode"
-                          placeholder="10001"
+                          placeholder="110001"
                           value={formData.zipCode}
                           onChange={handleInputChange}
                           className={errors.zipCode ? "border-red-500" : ""}
@@ -601,10 +601,10 @@ export default function CheckoutPage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
+                            <SelectItem value="IN">India</SelectItem>
+                            <SelectItem value="AE">United Arab Emirates</SelectItem>
+                            <SelectItem value="SG">Singapore</SelectItem>
                             <SelectItem value="US">United States</SelectItem>
-                            <SelectItem value="CA">Canada</SelectItem>
-                            <SelectItem value="UK">United Kingdom</SelectItem>
-                            <SelectItem value="AU">Australia</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -724,27 +724,27 @@ export default function CheckoutPage() {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm text-slate-600">
-                          Tickets ({orderData.tickets.quantity} × ${orderData.tickets.pricePerTicket})
+                          Tickets ({orderData.tickets.quantity} x {formatINR(orderData.tickets.pricePerTicket)})
                         </span>
-                        <span className="text-sm font-medium">${subtotal.toFixed(2)}</span>
+                        <span className="text-sm font-medium">{formatINR(subtotal)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-slate-600">Service Fee</span>
-                        <span className="text-sm font-medium">${orderData.fees.serviceFee.toFixed(2)}</span>
+                        <span className="text-sm font-medium">{formatINR(orderData.fees.serviceFee)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-slate-600">Processing Fee</span>
-                        <span className="text-sm font-medium">${orderData.fees.processingFee.toFixed(2)}</span>
+                        <span className="text-sm font-medium">{formatINR(orderData.fees.processingFee)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-slate-600">Tax</span>
-                        <span className="text-sm font-medium">${orderData.fees.tax.toFixed(2)}</span>
+                        <span className="text-sm font-medium">{formatINR(orderData.fees.tax)}</span>
                       </div>
 
                       {savings > 0 && (
                         <div className="flex justify-between text-green-600">
                           <span className="text-sm">You Save</span>
-                          <span className="text-sm font-medium">-${savings.toFixed(2)}</span>
+                          <span className="text-sm font-medium">-{formatINR(savings)}</span>
                         </div>
                       )}
                     </div>
@@ -753,7 +753,7 @@ export default function CheckoutPage() {
 
                     <div className="flex justify-between text-lg font-bold">
                       <span>Total</span>
-                      <span>${total.toFixed(2)}</span>
+                      <span>{formatINR(total)}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -797,7 +797,7 @@ export default function CheckoutPage() {
                   ) : (
                     <div className="flex items-center space-x-2">
                       <Lock className="h-4 w-4" />
-                      <span>Complete Purchase - ${total.toFixed(2)}</span>
+                      <span>Complete Purchase - {formatINR(total)}</span>
                     </div>
                   )}
                 </Button>

@@ -2,7 +2,7 @@
 import Footer from "@/components/footer"
 import { useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Upload, Calendar, DollarSign, Info } from "lucide-react"
+import { ArrowLeft, Upload, Calendar, IndianRupee, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 // import { EventStorage } from "@/lib/eventStorage"
 import { AuthGuard } from "@/components/auth-guard"
 import { Navbar } from "@/components/navbar"
+import { formatINR } from "@/lib/utils"
 
 export default function SellTicketsPage() {
   const [formData, setFormData] = useState({
@@ -47,100 +48,101 @@ export default function SellTicketsPage() {
   }
 
   const handleSubmit = async (e) => {
-  e.preventDefault()
-  setIsLoading(true)
+    e.preventDefault()
+    setIsLoading(true)
 
-  if (
-    !formData.eventTitle ||
-    !formData.eventDate ||
-    !formData.venue ||
-    !formData.location ||
-    !formData.category ||
-    !formData.originalPrice ||
-    !formData.sellingPrice ||
-    !formData.agreeToTerms
-  ) {
-    alert("Please fill in all required fields and agree to terms")
-    setIsLoading(false)
-    return
-  }
-
-  try {
-    const eventData = {
-      id: Date.now(), // temporary ID (ideally you let MongoDB assign _id)
-      title: formData.eventTitle,
-      date: formData.eventDate,
-      time: formData.eventTime || "8:00 PM",
-      venue: formData.venue,
-      location: formData.location,
-      price: parseFloat(formData.sellingPrice),
-      originalPrice: parseFloat(formData.originalPrice),
-      image: "/placeholder.svg?height=300&width=400",
-      category: formData.category,
-      rating: 0, // default
-      soldCount: 0, // default
-      trending: false, // default
-      availableTickets: formData.quantity,
-      description:
-        formData.description || `${formData.eventTitle} at ${formData.venue}`,
-      longDescription:
-        formData.description ||
-        `Experience ${formData.eventTitle} at ${formData.venue} in ${formData.location}. Don't miss this amazing event!`,
-      highlights: [
-        "Authentic tickets guaranteed",
-        "Instant transfer available",
-        "Great seats available",
-        "Trusted seller",
-        "Secure transaction",
-      ],
-      venue_info: {
-        address: `${formData.venue}, ${formData.location}`,
-        capacity: "TBD",
-        parking: "Check venue website for parking information",
-        accessibility: "Contact venue for accessibility information",
-      },
-      section: formData.ticketType || "General Admission",
-      row: "TBD",
-      seats: `1-${formData.quantity}`,
-      seller: "Anonymous", // you can set user email here later
-      isUserListing: true,
-      transferMethod: formData.transferMethod,
+    if (
+      !formData.eventTitle ||
+      !formData.eventDate ||
+      !formData.venue ||
+      !formData.location ||
+      !formData.category ||
+      !formData.originalPrice ||
+      !formData.sellingPrice ||
+      !formData.agreeToTerms
+    ) {
+      alert("Please fill in all required fields and agree to terms")
+      setIsLoading(false)
+      return
     }
 
-    const res = await fetch("/api/events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(eventData),
-    })
+    try {
+      const eventData = {
+        id: Date.now(), // temporary ID (ideally you let MongoDB assign _id)
+        title: formData.eventTitle,
+        date: formData.eventDate,
+        time: formData.eventTime || "8:00 PM",
+        venue: formData.venue,
+        location: formData.location,
+        price: parseFloat(formData.sellingPrice),
+        originalPrice: parseFloat(formData.originalPrice),
+        currency: "INR",
+        image: "/placeholder.svg?height=300&width=400",
+        category: formData.category,
+        rating: 0, // default
+        soldCount: 0, // default
+        trending: false, // default
+        availableTickets: formData.quantity,
+        description:
+          formData.description || `${formData.eventTitle} at ${formData.venue}`,
+        longDescription:
+          formData.description ||
+          `Experience ${formData.eventTitle} at ${formData.venue} in ${formData.location}. Don't miss this amazing event!`,
+        highlights: [
+          "Authentic tickets guaranteed",
+          "Instant transfer available",
+          "Great seats available",
+          "Trusted seller",
+          "Secure transaction",
+        ],
+        venue_info: {
+          address: `${formData.venue}, ${formData.location}`,
+          capacity: "TBD",
+          parking: "Check venue website for parking information",
+          accessibility: "Contact venue for accessibility information",
+        },
+        section: formData.ticketType || "General Admission",
+        row: "TBD",
+        seats: `1-${formData.quantity}`,
+        seller: "Anonymous", // you can set user email here later
+        isUserListing: true,
+        transferMethod: formData.transferMethod,
+      }
 
-    if (!res.ok) throw new Error("Failed to list event")
+      const res = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(eventData),
+      })
 
-    const newEvent = await res.json()
-    alert(`Success! Your event "${formData.eventTitle}" has been listed.`)
+      if (!res.ok) throw new Error("Failed to list event")
 
-    setFormData({
-      eventTitle: "",
-      eventDate: "",
-      eventTime: "",
-      venue: "",
-      location: "",
-      category: "",
-      ticketType: "",
-      originalPrice: "",
-      sellingPrice: "",
-      quantity: 1,
-      description: "",
-      transferMethod: "",
-      agreeToTerms: false,
-    })
-    setUploadedFiles([])
-  } catch (error) {
-    console.error("Error listing event:", error)
-    alert("Error listing your event. Please try again.")
-  } finally {
-    setIsLoading(false)
+      const newEvent = await res.json()
+      alert(`Success! Your event "${formData.eventTitle}" has been listed.`)
+
+      setFormData({
+        eventTitle: "",
+        eventDate: "",
+        eventTime: "",
+        venue: "",
+        location: "",
+        category: "",
+        ticketType: "",
+        originalPrice: "",
+        sellingPrice: "",
+        quantity: 1,
+        description: "",
+        transferMethod: "",
+        agreeToTerms: false,
+      })
+      setUploadedFiles([])
+    } catch (error) {
+      console.error("Error listing event:", error)
+      alert("Error listing your event. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
   }
-}
 
 
   return (
@@ -281,18 +283,18 @@ export default function SellTicketsPage() {
                     {/* Pricing */}
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold text-slate-900 flex items-center">
-                        <DollarSign className="h-5 w-5 mr-2" />
+                        <IndianRupee className="h-5 w-5 mr-2" />
                         Pricing & Quantity
                       </h3>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="originalPrice">Original Price *</Label>
+                          <Label htmlFor="originalPrice">Original Price (INR) *</Label>
                           <Input
                             id="originalPrice"
                             name="originalPrice"
                             type="number"
-                            placeholder="0.00"
+                            placeholder="0"
                             value={formData.originalPrice}
                             onChange={handleInputChange}
                             required
@@ -300,12 +302,12 @@ export default function SellTicketsPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="sellingPrice">Your Price *</Label>
+                          <Label htmlFor="sellingPrice">Your Price (INR) *</Label>
                           <Input
                             id="sellingPrice"
                             name="sellingPrice"
                             type="number"
-                            placeholder="0.00"
+                            placeholder="0"
                             value={formData.sellingPrice}
                             onChange={handleInputChange}
                             required
@@ -442,32 +444,31 @@ export default function SellTicketsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <DollarSign className="h-5 w-5 mr-2" />
+                    <IndianRupee className="h-5 w-5 mr-2" />
                     Pricing Summary
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex justify-between">
                     <span>Your Price:</span>
-                    <span className="font-semibold">${formData.sellingPrice || "0.00"}</span>
+                    <span className="font-semibold">{formatINR(formData.sellingPrice || 0)}</span>
                   </div>
                   <div className="flex justify-between text-sm text-slate-600">
                     <span>Service Fee (5%):</span>
-                    <span>-${((formData.sellingPrice || 0) * 0.05).toFixed(2)}</span>
+                    <span>-{formatINR((formData.sellingPrice || 0) * 0.05)}</span>
                   </div>
                   <div className="flex justify-between text-sm text-slate-600">
                     <span>Payment Processing (3%):</span>
-                    <span>-${((formData.sellingPrice || 0) * 0.03).toFixed(2)}</span>
+                    <span>-{formatINR((formData.sellingPrice || 0) * 0.03)}</span>
                   </div>
                   <hr />
                   <div className="flex justify-between font-semibold text-green-600">
                     <span>You'll Receive:</span>
-                    <span>${((formData.sellingPrice || 0) * 0.92).toFixed(2)}</span>
+                    <span>{formatINR((formData.sellingPrice || 0) * 0.92)}</span>
                   </div>
                   {formData.quantity > 1 && (
                     <div className="text-sm text-slate-600">
-                      Total for {formData.quantity} tickets: $
-                      {((formData.sellingPrice || 0) * 0.92 * formData.quantity).toFixed(2)}
+                      Total for {formData.quantity} tickets: {formatINR((formData.sellingPrice || 0) * 0.92 * formData.quantity)}
                     </div>
                   )}
                 </CardContent>

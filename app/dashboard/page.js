@@ -3,7 +3,7 @@ import Footer from "@/components/footer"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { User, Ticket, DollarSign, TrendingUp, Calendar, MapPin, Plus, Edit, Trash2, Download } from "lucide-react"
+import { User, Ticket, IndianRupee, TrendingUp, Calendar, MapPin, Plus, Edit, Trash2, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -13,6 +13,7 @@ import { EventStorage } from "@/lib/eventStorage"
 import { AuthGuard } from "@/components/auth-guard"
 import { Navbar } from "@/components/navbar"
 import { useSession } from "next-auth/react"
+import { formatINR } from "@/lib/utils"
 
 export default function DashboardPage() {
   const { data: session } = useSession()
@@ -228,9 +229,9 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-purple-100 text-sm">Total Spent</p>
-                    <p className="text-2xl font-bold">${stats.totalSpent.toFixed(2)}</p>
+                    <p className="text-2xl font-bold">{formatINR(stats.totalSpent)}</p>
                   </div>
-                  <DollarSign className="h-8 w-8 text-purple-200" />
+                  <IndianRupee className="h-8 w-8 text-purple-200" />
                 </div>
               </CardContent>
             </Card>
@@ -240,7 +241,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-green-100 text-sm">Total Earned</p>
-                    <p className="text-2xl font-bold">${stats.totalEarned.toFixed(2)}</p>
+                    <p className="text-2xl font-bold">{formatINR(stats.totalEarned)}</p>
                   </div>
                   <TrendingUp className="h-8 w-8 text-green-200" />
                 </div>
@@ -339,7 +340,7 @@ export default function DashboardPage() {
                               </div>
                               <div className="flex items-center justify-between mt-2">
                                 <span className="font-semibold">
-                                  ${ticket.price} × {ticket.quantity} = ${(ticket.price * ticket.quantity).toFixed(2)}
+                                  {formatINR(ticket.price)} x {ticket.quantity} = {formatINR(ticket.price * ticket.quantity)}
                                 </span>
                                 <Button size="sm" variant="outline" disabled={!isUpcoming}>
                                   <Download className="h-3 w-3 mr-1" />
@@ -420,9 +421,9 @@ export default function DashboardPage() {
                               </div>
                               <div className="flex items-center justify-between mt-2">
                                 <div>
-                                  <span className="font-semibold text-green-600">${event.price}</span>
+                                  <span className="font-semibold text-green-600">{formatINR(event.price)}</span>
                                   {event.originalPrice > event.price && (
-                                    <span className="text-slate-400 line-through ml-1">${event.originalPrice}</span>
+                                    <span className="text-slate-400 line-through ml-1">{formatINR(event.originalPrice)}</span>
                                   )}
                                 </div>
                                 <div className="flex space-x-1">
@@ -485,7 +486,7 @@ export default function DashboardPage() {
                       <div className="text-sm text-slate-600">Tickets Sold</div>
                     </div>
                     <div className="text-center p-4 bg-slate-50 rounded-lg">
-                      <div className="text-2xl font-bold text-slate-900">${stats.totalEarned.toFixed(0)}</div>
+                      <div className="text-2xl font-bold text-slate-900">{formatINR(stats.totalEarned, { maximumFractionDigits: 0 })}</div>
                       <div className="text-sm text-slate-600">Total Earnings</div>
                     </div>
                   </div>
@@ -504,11 +505,11 @@ export default function DashboardPage() {
                       </div>
                       <div>
                         <span className="text-blue-700">Money Spent:</span>
-                        <span className="font-medium ml-2">${stats.totalSpent.toFixed(2)}</span>
+                        <span className="font-medium ml-2">{formatINR(stats.totalSpent)}</span>
                       </div>
                       <div>
                         <span className="text-blue-700">Money Earned:</span>
-                        <span className="font-medium ml-2">${stats.totalEarned.toFixed(2)}</span>
+                        <span className="font-medium ml-2">{formatINR(stats.totalEarned)}</span>
                       </div>
                     </div>
                   </div>

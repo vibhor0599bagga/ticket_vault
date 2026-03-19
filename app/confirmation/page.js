@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Navbar } from "@/components/navbar"
+import { formatINR } from "@/lib/utils"
 
 export default function ConfirmationPage() {
   const [orderData, setOrderData] = useState(null)
@@ -54,9 +55,9 @@ export default function ConfirmationPage() {
         },
         tickets: {
           quantity: 2,
-          pricePerTicket: 150,
+          pricePerTicket: 12450,
         },
-        total: 334.9,
+        total: 27910,
         customer: {
           name: "John Doe",
           email: "john@example.com",
@@ -245,16 +246,16 @@ export default function ConfirmationPage() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-slate-600">
-                    Tickets ({orderData.tickets.quantity} × ${orderData.tickets.pricePerTicket})
+                    Tickets ({orderData.tickets.quantity} x {formatINR(orderData.tickets.pricePerTicket)})
                   </span>
                   <span className="font-medium">
-                    ${(orderData.tickets.quantity * orderData.tickets.pricePerTicket).toFixed(2)}
+                    {formatINR(orderData.tickets.quantity * orderData.tickets.pricePerTicket)}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Fees & Tax</span>
                   <span className="font-medium">
-                    ${(orderData.total - orderData.tickets.quantity * orderData.tickets.pricePerTicket).toFixed(2)}
+                    {formatINR(orderData.total - orderData.tickets.quantity * orderData.tickets.pricePerTicket)}
                   </span>
                 </div>
               </div>
@@ -263,7 +264,7 @@ export default function ConfirmationPage() {
 
               <div className="flex justify-between text-lg font-bold">
                 <span>Total Paid</span>
-                <span className="text-green-600">${orderData.total.toFixed(2)}</span>
+                <span className="text-green-600">{formatINR(orderData.total)}</span>
               </div>
             </CardContent>
           </Card>

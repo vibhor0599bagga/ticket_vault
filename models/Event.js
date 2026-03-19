@@ -13,6 +13,10 @@ const EventSchema = new mongoose.Schema({
   time: String,
   price: Number,
   originalPrice: Number,
+  currency: {
+    type: String,
+    default: "INR",
+  },
   availableTickets: Number,
   soldCount: Number,
   trending: Boolean,
